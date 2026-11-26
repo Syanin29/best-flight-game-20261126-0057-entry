@@ -151,7 +151,19 @@ export function stageShot(name, game) {
     game.beginPlay();
     game.setWeather(2);
     game.setView('chase');
+    // v2 framing: pull the chase camera back (22 m / 6.5 m) and fly PAST ring 12
+    // (z -1480) before freezing the frame — v1 froze the plane right at the
+    // ring plane, so the 40 m torus filled the whole frame. Also clear the leg
+    // banner (it covered the plane) and force one lightning flash at capture.
+    game.setChaseDistance(22, 6.5);
+    if (game.hud) game.hud.clearBanner();
     flyUntil(game, () => game.elapsed > 52 || game.leg > 1, 60 * 80);
+    flyUntil(game, () => game.state.pos.z < -1560 || game.leg > 2, 60 * 40);
+    // Clear the banner AFTER flying: the leg 1→2 transition fires a banner
+    // mid-flight, after the pre-flight clear — v2's first storm render still
+    // had it plastered across the plane.
+    if (game.hud) game.hud.clearBanner();
+    if (game.setForceFlash && game.stormTime) game.setForceFlash(game.stormTime() + 2);
     return { screen: 'play' };
   }
   if (name === 'landing') {

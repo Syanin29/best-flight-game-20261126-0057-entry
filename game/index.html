@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
-<title>Canyon Courier — 12 rings, 3 weather fronts, 2 aircraft, 1 golden-hour canyon</title>
+<title>Canyon Courier — 12 rings, 3 weather fronts, 2 aircraft, 3-leg ThermalWind loop</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1208; font-family: "Segoe UI", system-ui, sans-serif; }
   #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
@@ -75,6 +75,10 @@
       <div id="hud-compass">N · 0° · E</div>
     </div>
     <div class="panel">
+      <div class="lbl">ATTITUDE</div>
+      <canvas id="hud-attitude" width="186" height="64" style="width:100%;display:block;border-radius:6px"></canvas>
+    </div>
+    <div class="panel">
       <div>FUEL <span id="hud-fuel-text">100%</span></div>
       <div class="bar"><div id="hud-fuel-fill"></div></div>
       <div style="margin-top:6px">DAMAGE <span id="hud-dmg-text">0%</span></div>
@@ -99,7 +103,7 @@
 <div id="screen-title" class="screen">
   <div class="card">
     <h1>CANYON COURIER</h1>
-    <div class="tag">A complete flight game: 12 rings · 3 legs · ThermalWind weather · 2 aircraft · 1 golden-hour canyon</div>
+    <div class="tag">A complete flight game: 12 rings · 3-leg ThermalWind loop · 2 aircraft · 1 golden-hour canyon</div>
     <p>One sortie down Ember Canyon. <b>Leg 1 — Ring Run:</b> thread 12 gold rings, scored on centre accuracy and speed. <b>Leg 2 — Cargo Drop:</b> release 3 supply packs over the orange pads (F). <b>Leg 3 — Landing:</b> put her down on the short strip, slow and gentle.</p>
     <p><b>ThermalWind:</b> three weather fronts roll through — clear, strong wind, storm — and gold thermal columns give free lift. Ride a thermal and you save fuel; fight the storm and you burn it.</p>
     <p id="title-aircraft">Aircraft: Bush Courier (1) — press 1/2 to switch</p>

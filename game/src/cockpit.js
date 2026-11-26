@@ -92,14 +92,29 @@ export function createCockpit(camera) {
   const coaming = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.05, 0.08), trimMat);
   coaming.position.set(0, -0.13, PANEL_Z);
   group.add(coaming);
-  // Slim windshield frame posts at the edges — pushed further out so they frame
-  // instead of blocking (at 0.60 m a 0.30 m post spans half the frame).
+  // Slim windshield frame posts at the edges — v2: half the width of v1's
+  // (0.025 m posts read as black bars in the cover shot), pushed further out
+  // and shorter so they frame instead of blocking.
   for (const side of [-1, 1]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.22, 0.04), panelMat);
-    post.position.set(side * 0.42, 0.08, -0.90);
-    post.rotation.z = -side * 0.2;
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.16, 0.03), panelMat);
+    post.position.set(side * 0.52, 0.06, -1.05);
+    post.rotation.z = -side * 0.16;
     group.add(post);
   }
+  // v2: the nose cowling, seen over the panel — the cover shot's third juri
+  // complaint was "the aircraft is not visible from the cockpit". The real
+  // nose sits ~2.5 m ahead and ~0.5 m below the lens, i.e. just above the
+  // panel's top edge; this hump puts that orange cowling + spinner tip in
+  // frame even when the (now translucent) prop crosses it.
+  const noseMat = new THREE.MeshBasicMaterial({ color: 0xd86a2c });
+  const cowling = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.7), noseMat);
+  cowling.position.set(0, -0.31, -1.25);
+  cowling.rotation.x = 0.1;
+  group.add(cowling);
+  const cowlingTip = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.3, 10), new THREE.MeshBasicMaterial({ color: 0xb8bcc2 }));
+  cowlingTip.rotation.x = -Math.PI / 2;
+  cowlingTip.position.set(0, -0.30, -1.62);
+  group.add(cowlingTip);
   const alt = makeDial('ALT', 'm', 10, -0.28);
   const spd = makeDial('SPD', 'm/s', 10, -0.14);
   const hdg = makeDial('HDG', 'deg', 12, 0);

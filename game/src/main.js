@@ -43,16 +43,21 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
+// v2 shadows (threejs-game-development renderer defaults): one PCFSoft sun
+// shadow; the box follows the plane (world.updateSun), DPR stays clamped at 2.
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.1, 4000);
 scene.add(camera);
 
 const rng = createRandom(seed);
-const world = createWorld(rng);
+const world = createWorld(rng, createRandom(seed + 777));
 world.build(scene);
 const thermalWind = createThermalWind(rng, world);
 thermalWind.buildMeshes(scene);
+thermalWind.buildStorm(scene);
 const course = createCourse(rng, world);
 course.build(scene);
 const cockpit = createCockpit(camera);
@@ -117,6 +122,19 @@ function targetText() {
 function setView(next) {
   view = next;
   cockpit.setVisible(next === 'cockpit');
+  // v2 cover fix, second half: the prop blades are hidden from the cockpit
+  // itself — from the pilot's seat you see the spinner + a faint blur disc,
+  // never a blade bar across the windscreen. (The translucent blades still
+  // looked like a black bar in the cover shot: their camera-facing side is
+  // unlit at golden hour.) Chase view keeps the blades.
+  for (const b of aircraftMesh.blades ?? []) b.visible = next !== 'cockpit';
+}
+
+// Chase framing override for staged shots (storm shot pulls back so a ring
+// 30 m ahead no longer fills the whole frame); live play uses the default.
+function setChaseDistance(back, up) {
+  game.chaseBack = back;
+  game.chaseUp = up;
 }
 
 function setWeather(index) {
@@ -363,6 +381,9 @@ window.__debug = () => {
 // Expose the game object shots.js and the playtest drive.
 game.setView = setView;
 game.setWeather = setWeather;
+game.setChaseDistance = setChaseDistance;
+game.setForceFlash = (until) => thermalWind.setForceFlash(until);
+game.stormTime = () => thermalWind.time;
 game.stepOnce = stepOnce;
 game.reset = reset;
 game.beginPlay = beginPlay;
@@ -376,6 +397,8 @@ function updateCamera(dt) {
   const cp = Math.cos(s.pitch);
   forwardVec.set(-Math.sin(s.yaw) * cp, Math.sin(s.pitch), -Math.cos(s.yaw) * cp);
   if (view === 'cockpit') {
+    // Guard (variant swaps rebuild the mesh): blades never show from the seat.
+    for (const b of aircraftMesh.blades ?? []) b.visible = false;
     // High enough that the panel (camera child, 0.30 below the lens) clears the
     // fuselage top: any lower and the panel + dials hide inside the airframe.
     camera.position.copy(s.pos).addScaledVector(forwardVec, 0.9);
@@ -384,8 +407,9 @@ function updateCamera(dt) {
     camera.rotation.set(-s.pitch + lookPitch, s.yaw + lookYaw, s.roll);
     cockpit.update(s, null, thermalWind.liftAt(s.pos, thermalWind.time).inside !== null, '');
   } else {
-    const back = 15;
-    const up = 4.6;
+    for (const b of aircraftMesh.blades ?? []) b.visible = true;
+    const back = game.chaseBack ?? 15;
+    const up = game.chaseUp ?? 4.6;
     const desired = new THREE.Vector3()
       .copy(s.pos)
       .addScaledVector(forwardVec, -back)
@@ -419,9 +443,13 @@ function hudData() {
     mission: missionText(),
     frontLabel: thermalWind.front().label,
     wind,
-    windSpeed: Math.hypot(wind.x, wind.z),
+    // v2: the HUD shows the FRONT's configured wind (Storm = 19 m/s), not the
+    // instantaneous gusted vector — v1 showed "WIND 6 m/s" in a 19 m/s storm.
+    windSpeed: thermalWind.front().windSpeed,
     inThermal: thermalWind.liftAt(s.pos, thermalWind.time).inside !== null,
     targetText: targetText(),
+    pitch: s.pitch,
+    roll: s.roll,
   };
 }
 
@@ -511,9 +539,23 @@ function frame(now) {
   }
   syncAircraftMesh(aircraftMesh, game.state);
   updateCamera(dt);
+  // v2 per-frame visuals: sun shadow box follows the plane, thermal motes rise,
+  // rain + lightning live only while the front is Storm (all deterministic in time).
+  world.updateSun(game.state.pos);
+  thermalWind.updateVisuals(thermalWind.time);
+  thermalWind.updateStorm(thermalWind.time, game.state.pos, thermalWind.front().name);
   hud.update(now, hudData());
   hud.tickBanner(dt);
   renderer.render(scene, camera);
+  // v2 (scorecard Performance evidence): renderer diagnostics for the QA pass —
+  // draw calls / triangles / GPU memory, read after every render.
+  window.__rendererInfo = {
+    calls: renderer.info.render.calls,
+    triangles: renderer.info.render.triangles,
+    geometries: renderer.info.memory.geometries,
+    textures: renderer.info.memory.textures,
+    programs: renderer.info.programs.length,
+  };
   if (shot) {
     painted += 1;
     if (painted >= 2 && !window.__shotReady) window.__shotReady = true;

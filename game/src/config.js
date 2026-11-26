@@ -66,7 +66,7 @@ export const SCORE = {
 export const FRONTS = [
   { name: 'Clear', windSpeed: 3, gust: 1, fog: 0.0011, sun: 2.4, sky: 0xffc98a, label: 'FRONT 1/3 — CLEAR' },
   { name: 'Strong Wind', windSpeed: 11, gust: 4, fog: 0.0016, sun: 2.0, sky: 0xf0b070, label: 'FRONT 2/3 — STRONG WIND' },
-  { name: 'Storm', windSpeed: 19, gust: 9, fog: 0.0032, sun: 1.2, sky: 0x8a7a72, label: 'FRONT 3/3 — STORM' },
+  { name: 'Storm', windSpeed: 19, gust: 9, fog: 0.0042, sun: 0.9, sky: 0x6b5a58, label: 'FRONT 3/3 — STORM' },
 ];
 
 export const RANKS = [

@@ -14,7 +14,9 @@ try {
     await waitFor(page, () => window.__testDone === true, 180000, 'autopilot to finish');
     const result = await page.evaluate(() => window.__autopilotResult);
     const shotErrors = await page.evaluate(() => window.__errors);
+    const rendererInfo = await page.evaluate(() => window.__rendererInfo);
     console.log(JSON.stringify({ seed, ...result, pageErrors: shotErrors, consoleErrors: errors }, null, 2));
+    console.log(`RENDERER ${JSON.stringify(rendererInfo)}`);
     const clean = errors.length === 0 && shotErrors.length === 0;
     const ok = result && result.success === true && clean;
     console.log(ok ? 'PLAYTEST PASS' : `PLAYTEST FAIL (success=${result?.success} errors=${errors.length + shotErrors.length})`);

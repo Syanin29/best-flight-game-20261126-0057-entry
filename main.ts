@@ -37,4 +37,9 @@ writeFileSync(
 const dossier = JSON.parse(readFileSync(join(out, 'dossier.json'), 'utf8'));
 if (dossier.images.length !== 4) throw new Error(`dossier holds ${dossier.images.length} screenshots, expected 4`);
 const coverSha = createHash('sha256').update(Buffer.from(dossier.images[0].base64, 'base64')).digest('hex');
-if (coverSha !== '2cabda7a7824ce26a6ab96b898685b860434768a4d0d67074ef0cad8f48e8eef') throw new Error('dossier cover hash does not match the verified 1-start.jpg runway shot');
+if (coverSha !== 'b0a28dfb736f6aa1fbf864622c03345b5bdbc98b347e8ff5d75253069e30090c') throw new Error('dossier cover hash does not match the verified 1-start.jpg runway shot');
+// v2 reviser read-back (reviser edit, own invention): the STORM shot is the v2
+// headline fix — verify it too, so a swapped or dropped storm frame fails
+// here instead of handing in a v1 storm under a v2 cover.
+const stormSha = createHash('sha256').update(Buffer.from(dossier.images[2].base64, 'base64')).digest('hex');
+if (stormSha !== '3a987a8a1b3dffe10dfc7e2dc0cce68b57809ddde47f38d8a26f72a9e97d3d13') throw new Error('dossier storm hash does not match the verified 3-storm.jpg storm shot');

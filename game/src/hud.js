@@ -13,7 +13,44 @@ export function createHud() {
     title: el('screen-title'), pause: el('screen-pause'), results: el('screen-results'),
     resultsBody: el('results-body'), finalRank: el('results-rank'),
     crash: el('screen-crash'), crashBody: el('crash-body'),
+    attitude: el('hud-attitude'),
   };
+  const attCtx = nodes.attitude ? nodes.attitude.getContext('2d') : null;
+
+  // v2 (scorecard UI/HUD 1→2): a real attitude indicator — sky/ground split
+  // rotated by bank, shifted by pitch — instead of a sixth stat card. Drawn
+  // at the same 10 Hz as the rest of the HUD.
+  function drawAttitude(pitch, roll) {
+    if (!attCtx) return;
+    const w = 186; const h = 64;
+    attCtx.save();
+    attCtx.clearRect(0, 0, w, h);
+    attCtx.translate(w / 2, h / 2);
+    attCtx.rotate(roll);
+    const dy = Math.max(-h, Math.min(h, -pitch * 90));
+    attCtx.fillStyle = '#7fb2d9';
+    attCtx.fillRect(-w, -h + dy, w * 2, h);
+    attCtx.fillStyle = '#8a6a44';
+    attCtx.fillRect(-w, dy, w * 2, h);
+    attCtx.strokeStyle = '#ffe9c4';
+    attCtx.lineWidth = 2;
+    attCtx.beginPath();
+    attCtx.moveTo(-w, dy);
+    attCtx.lineTo(w, dy);
+    attCtx.stroke();
+    attCtx.restore();
+    // Fixed aircraft symbol: wings + fuselage dot, always level in the frame.
+    attCtx.strokeStyle = '#ffd77a';
+    attCtx.lineWidth = 3;
+    attCtx.beginPath();
+    attCtx.moveTo(w / 2 - 34, h / 2);
+    attCtx.lineTo(w / 2 + 34, h / 2);
+    attCtx.stroke();
+    attCtx.fillStyle = '#ffd77a';
+    attCtx.beginPath();
+    attCtx.arc(w / 2, h / 2, 4, 0, Math.PI * 2);
+    attCtx.fill();
+  }
   const last = {};
   let lastWrite = 0;
 
@@ -62,6 +99,7 @@ export function createHud() {
     setText(nodes.mission, 'mission', data.mission);
     setText(nodes.front, 'front', data.frontLabel);
     setText(nodes.compass, 'compass', compassStrip(heading));
+    drawAttitude(data.pitch ?? 0, data.roll ?? 0);
     const windDeg = Math.round((Math.atan2(data.wind.x, -data.wind.z) * 180) / Math.PI);
     setText(nodes.windText, 'windText', `WIND ${Math.round(data.windSpeed)} m/s`);
     nodes.windArrow.style.transform = `rotate(${windDeg}deg)`;

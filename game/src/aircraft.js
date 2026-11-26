@@ -74,20 +74,34 @@ export function buildAircraftMesh(variantKey) {
   const fin = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.5, 1.3), paint);
   fin.position.set(0, 0.85, 4.2);
   group.add(fin);
-  // Propeller: spinner cone + two blades on a hub that spins around Z (forward axis).
+  // Propeller: spinner cone + two THIN, TRANSLUCENT blades on a hub that spins
+  // around Z (forward axis). v1's opaque 0.28 m black blades read as a render
+  // glitch bar across the cockpit cover shot; translucent blades + a faint blur
+  // disc read as a spinning prop instead. Blades never cast shadows.
   const prop = new THREE.Group();
   const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.9, 10), aluminium);
   spinner.rotation.x = -Math.PI / 2;
   spinner.position.z = -4.35;
   prop.add(spinner);
+  const bladeMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2c33, roughness: 0.6, transparent: true, opacity: 0.32, depthWrite: false,
+  });
+  const blades = [];
   for (const angle of [0, Math.PI]) {
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.4, 0.08), dark);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.4, 0.06), bladeMat);
     blade.position.z = -4.1;
     const holder = new THREE.Group();
     holder.rotation.z = angle;
     holder.add(blade);
+    blades.push(blade);
     prop.add(holder);
   }
+  const blurDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(1.7, 28),
+    new THREE.MeshBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  blurDisc.position.z = -4.12;
+  prop.add(blurDisc);
   prop.position.z = 0;
   group.add(prop);
   // Fixed gear: two wheels + tail wheel.
@@ -111,8 +125,11 @@ export function buildAircraftMesh(variantKey) {
   const navT = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
   navT.position.set(0, 0.3, 4.6);
   group.add(navT);
-  group.traverse((o) => { if (o.isMesh) o.castShadow = false; });
-  return { group, prop };
+  // v2 shadows: the airframe casts (the prop does not — translucent blades
+  // would throw a solid bar shadow). Terrain and trees receive (see world.js).
+  group.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  prop.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+  return { group, prop, blades };
 }
 
 // One fixed step of arcade flight. `axes` comes from input.js; `env` carries wind (Vector3),
